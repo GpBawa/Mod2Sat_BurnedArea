@@ -1,19 +1,19 @@
 // --------------------------------------
-// Input Params for ModL2T Burned Area 
+// Input Params for ModLand Burned Area 
 // --------------------------------------
-// Author: Tianjia Liu
-// Last updated: September 30, 2018
+// Author: Gurjeetpal
+// Last updated: July 5, 2021
 
 // Buned Area Classification Thresholds
-var preThresh = ee.List([0.611,0.58,0.629,0.613,0.631,0.641,0.658,0.653,0.664,0.689,0.662,0.674,0.647,0.668]);
-var postThresh = ee.List([-0.027,-0.041,-0.041,-0.012,-0.018,-0.036,-0.025,-0.014,-0.002,-0.004,-0.021,-0.042,-0.041,-0.049]);
+var preThresh = 0.668;
+var postThresh = -0.049;
 
-// Landsat-MODIS NBR Difference
-var preDiff = ee.List([0.223,0.141,0.086,0.133,0.209,0.042,0.005,0.041,0.097,0.122,0.037,0.025,0.019,0.015]);
-var postDiff = ee.List([-0.07,-0.032,-0.024,-0.03,-0.015,0.021,0.013,-0.004,-0.017,-0.035,0.03,0.019,0.012,0.012]);
+// Sentinal-MODIS NBR Difference
+var preDiff = 0.05;
+var postDiff = -0.012;
 
 // Time Period
-var sYear = 2003; // Starting Year
+var sYear = 2016; // Starting Year
 var eYear = 2016; // Ending Year
 
 // Pre-fire and post-fire collection start and end dates
@@ -67,6 +67,22 @@ var calcNBR_l5and7 = function(image) {
   return nbrMasked;
 };
 
+//Sentinal-2A
+var calcNBR_s2 = function(image) {
+    // Bits 10 and 11 are clouds and cirrus, respectively.
+  var cloudBitMask = ee.Number(2).pow(10).int();
+  var cirrusBitMask = ee.Number(2).pow(11).int();
+  // Get the pixel QA band.
+  var qa = image.select('QA60');
+  // All flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+      .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+  // Return the masked image, scaled to TOA reflectance, without the QA bands.
+  var nbr = image.normalizedDifference(['B8','B12']);
+  var nbrMasked = nbr.updateMask(mask)
+  return nbrMasked;
+};
+
 exports.preThresh = preThresh;
 exports.postThresh = postThresh;
 exports.preDiff = preDiff;
@@ -81,3 +97,4 @@ exports.getQABits = getQABits;
 exports.calcNBR_modis = calcNBR_modis;
 exports.calcNBR_l8 = calcNBR_l8;
 exports.calcNBR_l5and7 = calcNBR_l5and7;
+exports.calcNBR_s2 = calcNBR_s2;
