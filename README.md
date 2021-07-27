@@ -11,14 +11,6 @@ Clone EE Git Repository in Terminal:
 git clone https://github.com/GpBawa/Mod2Sat_BurnedArea.git
 ```
 
-## ModL2T Burned Area in EE
-The output dataset, Mod2Sat burned area, is annual and at 10-m spatial resolution.
-
-Example script:
-```
-
-```
-
 ## Input Datasets
 We use the following datasets:
 
@@ -33,6 +25,13 @@ We use the following datasets:
 #### Esri Global Land cover 10:
 * 10-class global land cover for 2021, 10m
 
+## ModL2T Burned Area in EE
+The output dataset, Mod2Sat burned area, is annual and at 10-m spatial resolution.
+
+Example script:
+```
+
+```
 
 ## Known Issues
 * MODIS and Sentinel NBR composites were projected to geographic projection (lat/lon, EPSG:4326) and exported as assets to speed up calculations in GEE and prevent computational timeouts
