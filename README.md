@@ -2,7 +2,7 @@
 
 Mod2Sat: hybrid MODIS and Sentinel algorithm for estimating post-monsoon burned area from agricultural fires in northwestern India
 
-This algorithm is based in Google Earth Engine (EE) and R.
+This algorithm is based in Google Earth Engine (EE).
 
 ## EE Repository
 
