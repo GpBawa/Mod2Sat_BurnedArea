@@ -32,9 +32,13 @@ https://www.arcgis.com/apps/instant/media/index.html?appid=fc92d38533d440078f176
 ## ModL2T Burned Area in EE
 The output dataset, Mod2Sat burned area, is annual and at 10-m spatial resolution.
 
-Example script:
+Example script:(Upload downloaded scripts in EarthEngine Script tab)
 ```
-
+In EarthEngine Script tab. Run Script in order
+0-NBR_Composite.js
+1-NBR_Diff
+2-NBR_Thresh.js
+3-Mod2Sat.js
 ```
 
 ## Known Issues
