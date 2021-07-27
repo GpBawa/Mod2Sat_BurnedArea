@@ -1,28 +1,25 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var indiaShp = ee.FeatureCollection("projects/GlobalFires/IndiaAgFires/IND_adm1"),
-    mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
+var mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
     mod14a1 = ee.ImageCollection("MODIS/006/MOD14A1"),
     myd14a1 = ee.ImageCollection("MODIS/006/MYD14A1"),
-    modisNBR = ee.ImageCollection("projects/GlobalFires/IndiaAgFires/modisNBR");
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
+    indiaShp = ee.FeatureCollection("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/IND_adm1"),
+    modisNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/modisNBR/modisNBR_2016_");
 // -------------------------------------------------
 // Download MODIS pre and post-fire NBR to estimate
 // two-tailed burned area thresholds
 // -------------------------------------------------
-// Author: Tianjia Liu
-// Last updated: September 30, 2018
+// Author: Gurjeetpal Bawa
+// Last updated: July 20, 2021
 
 // Input Parameters:
-var params = require('users/tl2581/ModL2T_BA:InputParams.js');
+var params = require('users/gurjeetpalbawa1990/ModLand:InputParams.js');
 
 // Time Period
 var sYear = params.sYear; // Start Year
 var eYear = params.eYear; // End Year
 
 // State Boundaries
-var punjab = indiaShp.filterMetadata('STATE','equals','PUNJAB');
-var haryana = indiaShp.filterMetadata('STATE','equals','HARYANA');
-var states = haryana.merge(punjab).geometry();
+
+var states = indiaShp.filterMetadata('NAME_1','equals','HARYANA');
 
 var Shp = states;
 
@@ -30,7 +27,7 @@ var Shp = states;
 var inMonths = params.inMonths;
 var inDays = params.inDays;
 
-var modisScale = ee.Image(modisNBR.first());
+var modisScale = modisNBR;
 
 var getFireMask = function(firesDay) {
     return firesDay.select('MaxFRP').gt(0);
@@ -58,9 +55,9 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
   var totalFires = mod14a1Yr.add(myd14a1Yr).gt(0)
     .reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()});
   
-  var modisNBRyr = modisNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
-  var modis_NBRpre = modisNBRyr.select('preFire');
-  var modis_NBRpost = modisNBRyr.select('postFire');
+  // var modisNBRyr = modisNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
+  var modis_NBRpre = modisNBR.select('preFire');
+  var modis_NBRpost = modisNBR.select('postFire');
       
   // Threshold: pre-fire maximum NBR
   var maxThreshFire = modis_NBRpre.updateMask(mcd12q1Yr)
