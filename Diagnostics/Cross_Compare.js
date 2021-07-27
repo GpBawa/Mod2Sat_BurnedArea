@@ -1,20 +1,18 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var indiaShp = ee.FeatureCollection("projects/GlobalFires/IndiaAgFires/IND_adm1"),
-    mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
+var mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
     mcd64a1 = ee.ImageCollection("MODIS/006/MCD64A1"),
-    modisNBR = ee.ImageCollection("projects/GlobalFires/IndiaAgFires/modisNBR");
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
+    indiaShp = ee.FeatureCollection("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/IND_adm1"),
+    modisNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/modisNBR/modisNBR_2016");
 // -----------------------------------
 // Cross Comparison of MCD64A1 BA and
 // MODIS (MOD09A1)-only ModL2T BA
 // -----------------------------------
-// Author: Tianjia Liu
-// Last updated: October 17, 2018
+// Author:Gurjeetpal Bawa
+// Last updated: July 23, 2021
 
 // Default visualization layer: Cross Comparison in 2016
 
 // Input Parameters:
-var params = require('users/tl2581/ModL2T_BA:InputParams.js');
+var params = require('users/gurjeetpalbawa1990/ModLand:InputParams.js');
 var outputRegion = ee.Geometry.Rectangle([73.7,27.5,77.7,32.7],'EPSG:4326',false);
 
 // Time Period
@@ -22,11 +20,12 @@ var sYear = params.sYear; // Start Year
 var eYear = params.eYear; // End Year
 
 // State Boundaries
-var punjab = indiaShp.filterMetadata('STATE','equals','PUNJAB');
-var haryana = indiaShp.filterMetadata('STATE','equals','HARYANA');
-var states = haryana.merge(punjab).geometry();
+var punjab = indiaShp.filterMetadata('NAME_1','equals','Punjab');
+var haryana = indiaShp.filterMetadata('NAME_1','equals','Haryana');
+var states = haryana.merge(punjab);
 
 var Shp = states;
+
 
 // Burned Area Classification Thresholds
 var preThresh = params.preThresh;
@@ -36,7 +35,7 @@ var postThresh = params.postThresh;
 var inMonths = params.inMonths;
 var inDays = params.inDays;
 
-var modisScale = ee.Image(modisNBR.first());
+var modisScale = ee.Image(modisNBR);
   
 // ------------- START OF LOOP ---------------
 var modisCM = [];
@@ -55,18 +54,18 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
     .reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()})
     .gt(0).unmask(0);
 
-  var modisNBRyr = modisNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
+  var modisNBRyr = modisNBR;
   var modis_NBRpre = modisNBRyr.select('preFire');
   var modis_NBRpost = modisNBRyr.select('postFire');
   
 // ----------- Burned Area -------------
 // MODIS-derived burned area
-  var modisBA = modis_NBRpre.gt(ee.Array(preThresh.get(iYear-sYear)))
-    .multiply(modis_NBRpost.lt(ee.Array(postThresh.get(iYear-sYear))))
+  var modisBA = modis_NBRpre.gt(preThresh)
+    .multiply(modis_NBRpost.lt(postThresh))
     .gt(0).unmask(0)
     .reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()})
     .multiply(mcd12q1Yr);
-  
+
   var CM = mcd64a1Yr.gt(0).add(modisBA.gt(0).multiply(2));
   var CMsep = CM.eq(0).rename('TrueNeg').addBands(CM.eq(1).rename('FalseNeg'))
     .addBands(CM.eq(2).rename('FalsePos')).addBands(CM.eq(3).rename('TruePos'));
