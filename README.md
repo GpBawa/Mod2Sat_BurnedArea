@@ -15,14 +15,18 @@ git clone https://github.com/GpBawa/Mod2Sat_BurnedArea.git
 We use the following datasets:
 
 #### MODIS, Collection 6:
+Dataset will be accessed directly from EarthEngine. 
 * MCD64A1 Burned Area, 500m
 * MOD09A1 8-Day Composite Surface Reflectance, 500m
 * MxD14A1 Active Fires, 1km
 
 #### Sentinel 2A:
+Dataset will be accessed directly from EarthEngine. 
 * Surface Reflectance, 10m
 
 #### Esri Global Land cover 10:
+You need to download data from website(link below) and upload in EarthEngine Asset tab.
+https://www.arcgis.com/apps/instant/media/index.html?appid=fc92d38533d440078f17678ebc20e8e2
 * 10-class global land cover for 2021, 10m
 
 ## ModL2T Burned Area in EE
