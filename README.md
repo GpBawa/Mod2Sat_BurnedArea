@@ -5,13 +5,10 @@ Mod2Sat: hybrid MODIS and Sentinel algorithm for estimating post-monsoon burned 
 This algorithm is based in Google Earth Engine (EE) and R.
 
 ## EE Repository
-For EE Code Editor:
-```
-https://code.earthengine.google.com/?accept_repo=users/tl2581/ModL2T_BA
-```
+
 Clone EE Git Repository in Terminal:
 ```
-git clone https://earthengine.googlesource.com/users/tl2581/ModL2T_BA
+git clone https://github.com/GpBawa/Mod2Sat_BurnedArea.git
 ```
 
 ## ModL2T Burned Area in EE
