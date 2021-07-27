@@ -1,26 +1,26 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var indiaShp = ee.FeatureCollection("projects/GlobalFires/IndiaAgFires/IND_adm1"),
-    mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
-    modisNBR = ee.ImageCollection("projects/GlobalFires/IndiaAgFires/modisNBR");
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
+    indiaShp = ee.FeatureCollection("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/IND_adm1"),
+    modisNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/modisNBR/modisNBR_2016");
 // -------------------------------------------------
 // Download MODIS pre and post-fire NBR to estimate
 // two-tailed burned area thresholds
 // -------------------------------------------------
-// Author: Tianjia Liu
-// Last updated: October 1, 2018
+// Author:Gurjeetpal Bawa
+// Last updated: July 23, 2021
+
+// Default visualization layer: Cross Comparison in 2016
 
 // Input Parameters:
-var params = require('users/tl2581/ModL2T_BA:InputParams.js');
+var params = require('users/gurjeetpalbawa1990/ModLand:InputParams.js');
 
 // Time Period
-var sYear = 2012; // Start Year
+var sYear = params.sYear; // Start Year
 var eYear = params.eYear; // End Year
 
 // State Boundaries
-var punjab = indiaShp.filterMetadata('STATE','equals','PUNJAB');
-var haryana = indiaShp.filterMetadata('STATE','equals','HARYANA');
-var states = haryana.merge(punjab).geometry();
+var punjab = indiaShp.filterMetadata('NAME_1','equals','Punjab');
+var haryana = indiaShp.filterMetadata('NAME_1','equals','Haryana');
+var states = haryana.merge(punjab);
 
 var Shp = states;
 
@@ -28,7 +28,7 @@ var Shp = states;
 var inMonths = params.inMonths;
 var inDays = params.inDays;
 
-var modisScale = ee.Image(modisNBR.first());
+var modisScale = modisNBR;
 
 // ------------- START OF LOOP ---------------
 var nbr2T = [];
@@ -53,7 +53,7 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
   var totalFires = viirsPts.reduceToImage(['FRP'], 'mean').gt(0).unmask(0)
     .reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()});
 
-  var modisNBRyr = modisNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
+  var modisNBRyr = modisNBR;
   var modis_NBRpre = modisNBRyr.select('preFire');
   var modis_NBRpost = modisNBRyr.select('postFire');
       
