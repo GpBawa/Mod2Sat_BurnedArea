@@ -29,6 +29,10 @@ You need to download data from website(link below) and upload in EarthEngine Ass
 https://www.arcgis.com/apps/instant/media/index.html?appid=fc92d38533d440078f17678ebc20e8e2
 * 10-class global land cover for 2020, 10m
 
+#### India Admin Boundary:
+ Upload data folder in EarthEngine Asset tab.
+* India Administration boundary Level-1
+
 ## ModL2T Burned Area in EE
 The output dataset, Mod2Sat burned area, is annual and at 10-m spatial resolution.
 
