@@ -27,7 +27,7 @@ Dataset will be accessed directly from EarthEngine.
 #### Esri Global Land cover 10:
 You need to download data from website(link below) and upload in EarthEngine Asset tab.
 https://www.arcgis.com/apps/instant/media/index.html?appid=fc92d38533d440078f17678ebc20e8e2
-* 10-class global land cover for 2021, 10m
+* 10-class global land cover for 2020, 10m
 
 ## ModL2T Burned Area in EE
 The output dataset, Mod2Sat burned area, is annual and at 10-m spatial resolution.
