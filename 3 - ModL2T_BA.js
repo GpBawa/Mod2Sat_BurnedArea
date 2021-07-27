@@ -1,24 +1,23 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var indiaShp = ee.FeatureCollection("projects/GlobalFires/IndiaAgFires/IND_adm1"),
-    mcd64a1 = ee.ImageCollection("MODIS/006/MCD64A1"),
-    glc30 = ee.Image("projects/GlobalFires/IndiaAgFires/glc30"),
+var mcd64a1 = ee.ImageCollection("MODIS/006/MCD64A1"),
     mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
-    modisNBR = ee.ImageCollection("projects/GlobalFires/IndiaAgFires/modisNBR"),
-    landsatNBR = ee.ImageCollection("projects/GlobalFires/IndiaAgFires/landsatNBR");
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
+    glc30 = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/glc30"),
+    indiaShp = ee.FeatureCollection("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/IND_adm1"),
+    modisNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/modisNBR/modisNBR_2016"),
+    sentinalNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/sentinalNBR/sentinalNBR_2016");
 // --------------------------------------------------------------------
-// MODIS + Landsat Two-Tailed Normalized Burn Ratio (ModL2T NBR)
+// MODIS + Sentinal Two-Tailed Normalized Burn Ratio (Mod2Sat NBR)
 // burned area estimation in Punjab and Haryana, India
 // for the post-monsoon burning season from October to November
-// Datasets: MODIS\Terra C6 MOD09A1 (8-day composite) & Landsat 5,7,8
+// Datasets: MODIS\Terra C6 MOD09A1 (8-day composite) & Sentinal 2A
 // --------------------------------------------------------------------
-// Author: Tianjia Liu
-// Last Updated: October 1, 2018
+// Author: Gurjeetpal
+// Last Updated: July 15, 2021
 
-// Default visualization layer: ModL2T BA in 2016
+// Default visualization layer: Mod2Sat BA in 2016
 
 // Input Parameters:
-var params = require('users/tl2581/ModL2T_BA:InputParams.js');
+var params = require('users/gurjeetpalbawa1990/ModLand:InputParams.js');
+// var outputRegion = ee.Geometry.Rectangle([74.5,27.5,77.7,30.6],'EPSG:4326',false);//Haryana Region
 var outputRegion = ee.Geometry.Rectangle([73.7,27.5,77.7,32.7],'EPSG:4326',false);
 var exportToAssets = false;
 
@@ -27,13 +26,13 @@ var sYear = params.sYear; // Start Year
 var eYear = params.eYear; // End Year
 
 // State Boundaries
-var punjab = indiaShp.filterMetadata('STATE','equals','PUNJAB');
-var haryana = indiaShp.filterMetadata('STATE','equals','HARYANA');
+var punjab = indiaShp.filterMetadata('NAME_1','equals','Punjab');
+var haryana = indiaShp.filterMetadata('NAME_1','equals','Haryana');
 var states = haryana.merge(punjab);
 
 var Shp = states;
 
-// Params: NBR Thresholds, MODIS-Landsat NBR Difference Compensation
+// Params: NBR Thresholds, MODIS-Sentinal NBR Difference Compensation
 var preThresh = params.preThresh;
 var postThresh = params.postThresh;
 var preDiff = params.preDiff;
@@ -48,6 +47,7 @@ var getPtYr = function(feature) {
   return feature.setGeometry(ee.Geometry.Point(iYear,0));
 };
 
+//if MCD64A1 BA matches computed features then add to Feature Collection 
 var joinBA = function(feature) {
   var subBA = ee.Feature(ee.Join.simple().apply(mcd64a1BAyr,feature,joinFilter).first())
     .select(['sum'],['MCD64A1']);
@@ -56,12 +56,12 @@ var joinBA = function(feature) {
 
 var joinFilter = ee.Filter.equals({
   leftField: 'STATE',
-  rightField: 'STATE'
+  rightField: 'NAME_1'
 });
 
-var modisScale = ee.Image(modisNBR.first());
-var landScale = ee.Image(landsatNBR.first());
-var glc30Re = glc30.reproject({crs: landScale.projection(), scale: landScale.projection().nominalScale()});
+var modisScale = ee.Image(modisNBR);
+var sentinalScale = ee.Image(sentinalNBR);
+var glc30Re = glc30.reproject({crs: sentinalScale.projection()});
 
 // ------------- START OF LOOP ---------------
 var totalBA = [];
@@ -80,73 +80,76 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
     .gt(0).unmask(0)
     .reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()});
   
-  var modisNBRyr = modisNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
-  var modis_NBRpre = modisNBRyr.select('preFire');
-  var modis_NBRpost = modisNBRyr.select('postFire');
+  // var modisNBRyr = modisNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
+  var modis_NBRpre = modisNBR.select('preFire');
+  var modis_NBRpost = modisNBR.select('postFire');
 
-  var landsatNBRyr = landsatNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
-  var landsat_NBRpre = landsatNBRyr.select('preFire');
-  var landsat_NBRpost = landsatNBRyr.select('postFire');
+  // var sentinalNBRyr = sentinalNBR.filter(ee.Filter.calendarRange(iYear,iYear,'year')).first();
+  var sentinal_NBRpre = sentinalNBR.select('preFire');
+  var sentinal_NBRpost = sentinalNBR.select('postFire');
 
 // ----------- Burned Area -------------
-// MODIS & Landsat-derived burned area
-  var modisBA = modis_NBRpre.gt(ee.Array(preThresh.get(iYear-sYear)))
-    .multiply(modis_NBRpost.lt(ee.Array(postThresh.get(iYear-sYear))))
+// MODIS & Sentinal-derived burned area
+  var modisBA = modis_NBRpre.gt(preThresh)
+    .multiply(modis_NBRpost.lt(postThresh))
     .gt(0).unmask(0)
     .reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()});
 
-  var landsatBA = landsat_NBRpre.add(ee.Array(preDiff.get(iYear-sYear)))
-    .gt(ee.Array(preThresh.get(iYear-sYear)))
-    .multiply(landsat_NBRpost.add(ee.Array(postDiff.get(iYear-sYear)))
-    .lt(ee.Array(postThresh.get(iYear-sYear)))).gt(0).unmask(0)
-    .reproject({crs: landScale.projection(), scale: landScale.projection().nominalScale()});
+  var sentinalBA = sentinal_NBRpre.add(preDiff)
+    .gt(preThresh)
+    .multiply(sentinal_NBRpost.add(postDiff))
+    .lt(postThresh).gt(0).unmask(0)
+   .reproject({crs: sentinalScale.projection(), scale: sentinalScale.projection().nominalScale()});
+
     
-  // Merge MODIS and Landsat-derived burned area  
-  var landsatPreRe = landsat_NBRpre
+  // Merge MODIS and Sentinal-derived burned area  
+  var sentinalPreRe = sentinal_NBRpre
     .reduceResolution({
       reducer: ee.Reducer.mean(),
-      maxPixels: 1024
+      maxPixels: 2600
     }).reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()});
 
-  var landsatPostRe = landsat_NBRpost
+  var sentinalPostRe = sentinal_NBRpost
     .reduceResolution({
       reducer: ee.Reducer.mean(),
-      maxPixels: 1024
+      maxPixels: 2600
     }).reproject({crs: modisScale.projection(), scale: modisScale.projection().nominalScale()});
   
   var mergeThresh = 0.1;
-  // Replace MODIS pixels with Landsat pixels where the merging criteria is met
-  var landsatMask = modis_NBRpre.subtract(landsatPreRe).abs().lt(mergeThresh)
-    .multiply(modis_NBRpost.subtract(landsatPostRe).abs().lt(mergeThresh)).unmask(0);
+  // Replace MODIS pixels with Sentinal pixels where the merging criteria is met
+  // Mask pixel the don not belong to Sentinal
+  var sentinalMask = modis_NBRpre.subtract(sentinalPreRe).abs().lt(mergeThresh)
+    .multiply(modis_NBRpost.subtract(sentinalPostRe).abs().lt(mergeThresh)).unmask(0);
 
-  var landsatRevMask = landsatMask.eq(0);
+  // Mask pixel that belong to Sentinal
+  var sentinalRevMask = sentinalMask.eq(0);
       
-  var burnAll = landsatBA.multiply(landsatMask)
-    .add(modisBA.add(mcd64a1Yr).multiply(mcd12q1Yr).gt(0).multiply(landsatRevMask))
-    .updateMask(glc30Re.eq(10)).gt(0)
-    .reproject({crs: landScale.projection(), scale: landScale.projection().nominalScale()});
-  
-  // Confidence Scores: MODIS = 1, Landsat = 2, MCD64A1 = 3
-  var burnConf = landsatBA.multiply(landsatMask).multiply(2).add(modisBA)
+  var burnAll = sentinalBA.multiply(sentinalMask)
+    .add(modisBA.add(mcd64a1Yr).multiply(mcd12q1Yr).gt(0).multiply(sentinalRevMask))
+    .updateMask(glc30Re.eq(5).or(glc30Re.eq(4))).gt(0)
+    .reproject({crs: sentinalScale.projection(), scale: sentinalScale.projection().nominalScale()});
+
+  // Confidence Scores: MODIS = 1, Sentinal = 2, MCD64A1 = 3
+  var burnConf = sentinalBA.multiply(sentinalMask).multiply(2).add(modisBA)
     .add(mcd64a1Yr.multiply(3)).rename('confidence')
     .updateMask(burnAll)
-    .reproject({crs: landScale.projection(), scale: landScale.projection().nominalScale()})
+    .reproject({crs: sentinalScale.projection(), scale: sentinalScale.projection().nominalScale()})
     .set('system:time_start',ee.Date.fromYMD(iYear,10,1));
-    
+
   if (iYear == 2016) {var display = true;} else {var display = false;}
   // Visualize Burned Area & Print Stats
-  Map.setCenter(75.8, 30.8, 8);
+ Map.setCenter(75.8, 30.8, 12);
   // Layers are by default off, click on layers to visualize
   Map.addLayer(burnConf.updateMask(burnConf).clip(Shp),
     {palette:["#FFFFB2","#FED976","#FEB24C","#FD8D3C","#F03B20","#BD0026"]}, iYear.toString(), display);
 
-  var modl2tBAyr = burnAll.multiply(burnConf.gt(1)).rename('ModL2T')
-    .addBands(burnConf.eq(1).rename('ModL2T_C1'))
-    .addBands(burnConf.eq(2).rename('ModL2T_C2'))
-    .addBands(burnConf.eq(3).rename('ModL2T_C3'))
-    .addBands(burnConf.eq(4).rename('ModL2T_C4'))
-    .addBands(burnConf.eq(5).rename('ModL2T_C5'))
-    .addBands(burnConf.eq(6).rename('ModL2T_C6'))
+  var mod2satBAyr = burnAll.multiply(burnConf.gt(1)).rename('Mod2Sat')
+    .addBands(burnConf.eq(1).rename('Mod2Sat_C1'))
+    .addBands(burnConf.eq(2).rename('Mod2Sat_C2'))
+    .addBands(burnConf.eq(3).rename('Mod2Sat_C3'))
+    .addBands(burnConf.eq(4).rename('Mod2Sat_C4'))
+    .addBands(burnConf.eq(5).rename('Mod2Sat_C5'))
+    .addBands(burnConf.eq(6).rename('Mod2Sat_C6'))
     .multiply(ee.Image.pixelArea()).multiply(1/1000/1000)
     .reduceRegions({
       collection: Shp,
@@ -162,16 +165,16 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
       scale: modisScale.projection().nominalScale()
     });
 
-  var combinedBAyr = modl2tBAyr.map(joinBA);
-  var totalBA = ee.FeatureCollection(totalBA).merge(combinedBAyr.map(getPtYr));
+  var combinedBAyr = mod2satBAyr.map(joinBA); //Add Confidence Sum as attribut to feature
+  var totalBA = ee.FeatureCollection(totalBA).merge(combinedBAyr.map(getPtYr));//Add computed feature with year to feature table
 
-  var modl2tBA = modl2tBAyr.reduceColumns({
+  var mod2satBA = mod2satBAyr.reduceColumns({
     reducer: ee.Reducer.sum(),
-    selectors: ['ModL2T']
+    selectors: ['Mod2Sat']
   }).toArray().round().toList().get(0);
   
-  print(iYear.toString() + ' ModL2T BA (km^2):');
-  print(modl2tBA);
+  print(iYear.toString() + ' Mod2Sat BA (km^2):');
+  print(mod2satBA);
 
   var mcd64a1BA = mcd64a1BAyr.reduceColumns({
     reducer: ee.Reducer.sum(),
@@ -187,10 +190,10 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
     Export.image.toAsset({
       image: burnConf.clip(Shp),
       region: outputRegion,
-      description: 'ModL2T_BA_' + iYear,
-      assetId: 'projects/GlobalFires/IndiaAgFires/ModL2T_BA/' + 'ModL2T_BA_' + iYear,
+      description: 'Mod2Sat_BA_' + iYear,
+      assetId: 'users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/' + 'Mod2Sat_BA_' + iYear,
       crs: 'EPSG:4326',
-      scale: 30,
+      scale: 10,
       maxPixels: 1e12
     });
   }
@@ -199,9 +202,9 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
     Export.image.toDrive({
       image: burnConf.clip(Shp),
       region: outputRegion,
-      description: 'ModL2T_BA_' + iYear,
+      description: 'Mod2Sat_BA_' + iYear,
       crs: 'EPSG:4326',
-      scale: 30,
+      scale: 10,
       maxPixels: 1e12
     });
   }
@@ -211,7 +214,7 @@ for(var iYear = sYear; iYear <= eYear; iYear++) {
 Export.table.toDrive({
   collection: totalBA,
   description: 'totalBA_States',
-  selectors: ['MCD64A1','ModL2T','ModL2T_C1','ModL2T_C2'
-  ,'ModL2T_C3','ModL2T_C4','ModL2T_C5','ModL2T_C6',
+  selectors: ['MCD64A1','Mod2Sat','Mod2Sat_C1','Mod2Sat_C2'
+  ,'Mod2Sat_C3','Mod2Sat_C4','Mod2Sat_C5','Mod2Sat_C6',
   'STATE','.geo']
 });
