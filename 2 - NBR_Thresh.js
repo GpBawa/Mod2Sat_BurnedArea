@@ -2,7 +2,7 @@ var mcd12q1 = ee.ImageCollection("MODIS/006/MCD12Q1"),
     mod14a1 = ee.ImageCollection("MODIS/006/MOD14A1"),
     myd14a1 = ee.ImageCollection("MODIS/006/MYD14A1"),
     indiaShp = ee.FeatureCollection("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/IND_adm1"),
-    modisNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/modisNBR/modisNBR_2016_");
+    modisNBR = ee.Image("users/gurjeetpalbawa1990/projects/GlobalFires/IndiaAgFires/modisNBR/modisNBR_2016");
 // -------------------------------------------------
 // Download MODIS pre and post-fire NBR to estimate
 // two-tailed burned area thresholds
